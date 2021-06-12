@@ -1,8 +1,11 @@
 import Head from 'next/head';
 import Image from 'next/image';
-import { Container, Flex, Spacer, Box, Heading, Button, Input } from '@chakra-ui/react';
+import { Container, Flex, Spacer, Box, Heading, Button, Input, Checkbox } from '@chakra-ui/react';
+import { useState } from 'react';
 
-export default function Home() {
+export default function Home({ data = [] }: { data: any }) {
+	const [todos, setTodos] = useState(data);
+
 	return (
 		<>
 			<Head>
@@ -13,7 +16,7 @@ export default function Home() {
 			<main>
 				<Container centerContent maxW="container.md">
 					<Flex flexDirection="column" paddingY="16" width="full" border="4px" justifyContent="center">
-						<Flex paddingX={{ md: '8', sm: '2' }} direction={{ md: 'row', sm: 'column' }}>
+						<Flex paddingX={{ md: '8', sm: '4' }} direction={{ md: 'row', sm: 'column' }} marginBottom="12">
 							<Flex
 								justifyContent={{ md: 'start', sm: 'center' }}
 								alignItems="center"
@@ -44,6 +47,48 @@ export default function Home() {
 								</Button>
 							</Flex>
 						</Flex>
+						<Flex
+							px="4"
+							marginX={{ md: '8', sm: '4' }}
+							flexDirection="column"
+							border="1px"
+							borderColor="gray.200"
+							borderRadius="sm"
+						>
+							{todos &&
+								todos.map((element) => (
+									<Flex my="4" justifyContent="space-between" key={element.id}>
+										<Checkbox
+											checked={element.completed}
+											colorScheme="purple"
+											textDecorationLine={`${element.completed ? `line-through` : `none`}`}
+										>
+											{element.todo}
+										</Checkbox>
+										<Flex>
+											<Button
+												background="purple.100"
+												color="purple.800"
+												onClick={() => {
+													console.log('Editar');
+												}}
+												marginRight="2"
+											>
+												Editar
+											</Button>
+											<Button
+												background="purple.700"
+												color="purple.50"
+												onClick={() => {
+													console.log('Eliminar');
+												}}
+											>
+												Eliminar
+											</Button>
+										</Flex>
+									</Flex>
+								))}
+						</Flex>
 					</Flex>
 				</Container>
 			</main>
@@ -52,10 +97,12 @@ export default function Home() {
 }
 
 export async function getServerSideProps(ctx) {
-	console.log('objeto');
+	const res = await fetch('http://localhost:3001/todos');
+	const data = await res.json();
+
 	return {
 		props: {
-			data: [],
+			data: data,
 		},
 	};
 }
