@@ -1,0 +1,8 @@
+{
+	"todos": [
+		{ "id": 1, "todo": "Learn Nest" },
+		{ "id": 2, "todo": "Do the homework" },
+		{ "id": 3, "todo": "Teach Nextjs" },
+		{ "id": 4, "todo": "Test OpenLayers" }
+	]
+}
