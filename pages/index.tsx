@@ -16,8 +16,13 @@ import {
 	ModalFooter,
 	ModalBody,
 	ModalCloseButton,
+	Alert,
+	AlertIcon,
+	AlertTitle,
+	AlertDescription,
 } from '@chakra-ui/react';
 import { useRef, useState } from 'react';
+import { nanoid } from 'nanoid';
 
 export default function Home({ data = [] }: { data: any }) {
 	const [todos, setTodos] = useState(data);
@@ -25,24 +30,73 @@ export default function Home({ data = [] }: { data: any }) {
 
 	const [newTodo, setNewTodo] = useState('');
 	const [updateTodo, setUpdateTodo] = useState('');
+	const [updateTodoId, setUpdateTodoId] = useState('');
+
+	const [error, setError] = useState('');
+	const [success, setSuccess] = useState('');
 
 	const finalRef = useRef();
 	const handleClose = () => {
 		setUpdateTodo('');
+		setUpdateTodoId('');
 		setIsModalOpen(false);
 	};
-	const handleSave = (type = 'create') => {
+	const handleSave = async (id = nanoid(), type = 'create') => {
 		if (type === 'update') {
-			console.log('update: ', updateTodo);
+			try {
+				if (!(updateTodo.trim().length > 3)) {
+					console.log('muy corto, ', updateTodoId);
+					return;
+				}
+				await fetch(`http://localhost:3001/todos/${id}`, {
+					method: 'PATCH',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ todo: updateTodo }),
+				});
+				// const data = await res.json();
+				// console.log(data);
+				setTodos((prev) => prev.map((el) => (el.id === id ? { ...el, todo: updateTodo } : el)));
+				setSuccess('Se actualizó tarea exitosamente');
+			} catch (error) {
+				console.log(error);
+				setError(error);
+			}
+			setTimeout(() => {
+				setSuccess('');
+				setError('');
+			}, 1500);
 			handleClose();
 			return;
 		}
-
-		console.log('create: ', newTodo);
+		try {
+			if (!(newTodo.trim().length > 3)) return;
+			const res = await fetch(`http://localhost:3001/todos/`, {
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ todo: newTodo, id, completed: false }),
+			});
+			const data = await res.json();
+			setNewTodo('');
+			setTodos((prev) => [...prev, data]);
+			setSuccess('Se creó tarea exitosamente');
+		} catch (error) {
+			console.log(error);
+			setError(error);
+		}
+		setTimeout(() => {
+			setSuccess('');
+			setError('');
+		}, 1500);
 	};
 	const handleCheck = async (element) => {
 		try {
-			const res = await fetch(`http://localhost:3001/todos/${element.id}`, {
+			await fetch(`http://localhost:3001/todos/${element.id}`, {
 				method: 'PATCH',
 				headers: {
 					Accept: 'application/json',
@@ -50,15 +104,42 @@ export default function Home({ data = [] }: { data: any }) {
 				},
 				body: JSON.stringify({ completed: !element.completed }),
 			});
-			const data = await res.json();
-			console.log(data);
+			// const data = await res.json();
+			// console.log(data);
 			setTodos((prev) => prev.map((el) => (el.id === element.id ? { ...el, completed: !el.completed } : el)));
+			// setSuccess('Se marco correctamente')
 		} catch (error) {
 			console.log(error);
+			setError(error);
 		}
+		setTimeout(() => {
+			setSuccess('');
+			setError('');
+		}, 1500);
+	};
+	const handleDelete = async (id) => {
+		try {
+			await fetch(`http://localhost:3001/todos/${id}`, {
+				method: 'DELETE',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+			});
+			setTodos((prev) => prev.filter((el) => el.id !== id));
+			setSuccess('Se eliminó tarea exitosamente');
+		} catch (error) {
+			console.log(error);
+			setError(error);
+		}
+		setTimeout(() => {
+			setSuccess('');
+			setError('');
+		}, 1500);
 	};
 	const handleOpenModal = (element) => {
 		setUpdateTodo(element.todo);
+		setUpdateTodoId(element.id);
 		setIsModalOpen(true);
 	};
 	return (
@@ -108,6 +189,20 @@ export default function Home({ data = [] }: { data: any }) {
 								</Button>
 							</Flex>
 						</Flex>
+						<Flex mb="4">
+							{error && (
+								<Alert status="error" marginX={{ md: '8', sm: '4' }}>
+									<AlertIcon />
+									There was an error processing your request
+								</Alert>
+							)}
+							{success && (
+								<Alert status="success" marginX={{ md: '8', sm: '4' }}>
+									<AlertIcon />
+									{success}
+								</Alert>
+							)}
+						</Flex>
 						<Flex
 							px="4"
 							marginX={{ md: '8', sm: '4' }}
@@ -142,7 +237,7 @@ export default function Home({ data = [] }: { data: any }) {
 												colorScheme="purple"
 												variant="ghost"
 												onClick={() => {
-													console.log('Eliminar');
+													handleDelete(element.id);
 												}}
 											>
 												Eliminar
@@ -177,7 +272,7 @@ export default function Home({ data = [] }: { data: any }) {
 								<Button colorScheme="purple" variant="ghost" mr={3} onClick={() => handleClose()}>
 									Cancelar
 								</Button>
-								<Button colorScheme="purple" onClick={() => handleSave('update')}>
+								<Button colorScheme="purple" onClick={() => handleSave(updateTodoId, 'update')}>
 									Guardar
 								</Button>
 							</ModalFooter>
