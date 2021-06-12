@@ -1,11 +1,66 @@
 import Head from 'next/head';
 import Image from 'next/image';
-import { Container, Flex, Spacer, Box, Heading, Button, Input, Checkbox } from '@chakra-ui/react';
-import { useState } from 'react';
+import {
+	Container,
+	Flex,
+	Spacer,
+	Box,
+	Heading,
+	Button,
+	Input,
+	Checkbox,
+	Modal,
+	ModalOverlay,
+	ModalContent,
+	ModalHeader,
+	ModalFooter,
+	ModalBody,
+	ModalCloseButton,
+} from '@chakra-ui/react';
+import { useRef, useState } from 'react';
 
 export default function Home({ data = [] }: { data: any }) {
 	const [todos, setTodos] = useState(data);
+	const [isModalOpen, setIsModalOpen] = useState(false);
 
+	const [newTodo, setNewTodo] = useState('');
+	const [updateTodo, setUpdateTodo] = useState('');
+
+	const finalRef = useRef();
+	const handleClose = () => {
+		setUpdateTodo('');
+		setIsModalOpen(false);
+	};
+	const handleSave = (type = 'create') => {
+		if (type === 'update') {
+			console.log('update: ', updateTodo);
+			handleClose();
+			return;
+		}
+
+		console.log('create: ', newTodo);
+	};
+	const handleCheck = async (element) => {
+		try {
+			const res = await fetch(`http://localhost:3001/todos/${element.id}`, {
+				method: 'PATCH',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ completed: !element.completed }),
+			});
+			const data = await res.json();
+			console.log(data);
+			setTodos((prev) => prev.map((el) => (el.id === element.id ? { ...el, completed: !el.completed } : el)));
+		} catch (error) {
+			console.log(error);
+		}
+	};
+	const handleOpenModal = (element) => {
+		setUpdateTodo(element.todo);
+		setIsModalOpen(true);
+	};
 	return (
 		<>
 			<Head>
@@ -15,7 +70,7 @@ export default function Home({ data = [] }: { data: any }) {
 			</Head>
 			<main>
 				<Container centerContent maxW="container.md">
-					<Flex flexDirection="column" paddingY="16" width="full" border="4px" justifyContent="center">
+					<Flex flexDirection="column" paddingY="16" width="full" justifyContent="center">
 						<Flex paddingX={{ md: '8', sm: '4' }} direction={{ md: 'row', sm: 'column' }} marginBottom="12">
 							<Flex
 								justifyContent={{ md: 'start', sm: 'center' }}
@@ -35,12 +90,18 @@ export default function Home({ data = [] }: { data: any }) {
 							<Spacer />
 
 							<Flex w={{ sm: 'full' }}>
-								<Input placeholder="Basic usage" width={{ md: '72', sm: 'full' }} marginRight="4" />
+								<Input
+									placeholder="Basic usage"
+									width={{ md: '72', sm: 'full' }}
+									marginRight="4"
+									value={newTodo}
+									onChange={(e) => setNewTodo(e.target.value)}
+								/>
 								<Button
 									width={{ md: 'auto', sm: '32' }}
 									colorScheme="purple"
 									onClick={() => {
-										console.log('Agregar');
+										handleSave();
 									}}
 								>
 									Agregar
@@ -59,26 +120,27 @@ export default function Home({ data = [] }: { data: any }) {
 								todos.map((element) => (
 									<Flex my="4" justifyContent="space-between" key={element.id}>
 										<Checkbox
-											checked={element.completed}
+											isChecked={element.completed}
 											colorScheme="purple"
 											textDecorationLine={`${element.completed ? `line-through` : `none`}`}
+											onChange={() => handleCheck(element)}
 										>
 											{element.todo}
 										</Checkbox>
 										<Flex>
 											<Button
-												background="purple.100"
-												color="purple.800"
+												colorScheme="purple"
+												variant="outline"
 												onClick={() => {
-													console.log('Editar');
+													handleOpenModal(element);
 												}}
 												marginRight="2"
 											>
 												Editar
 											</Button>
 											<Button
-												background="purple.700"
-												color="purple.50"
+												colorScheme="purple"
+												variant="ghost"
 												onClick={() => {
 													console.log('Eliminar');
 												}}
@@ -90,6 +152,37 @@ export default function Home({ data = [] }: { data: any }) {
 								))}
 						</Flex>
 					</Flex>
+					<Modal
+						finalFocusRef={finalRef}
+						isOpen={isModalOpen}
+						onClose={() => {
+							handleClose();
+						}}
+					>
+						<ModalOverlay />
+						<ModalContent>
+							<ModalHeader>Editar Todo</ModalHeader>
+
+							<ModalBody>
+								<Input
+									placeholder="Actividad..."
+									width="full"
+									marginRight="4"
+									value={updateTodo}
+									onChange={(e) => setUpdateTodo(e.target.value)}
+								/>
+							</ModalBody>
+
+							<ModalFooter>
+								<Button colorScheme="purple" variant="ghost" mr={3} onClick={() => handleClose()}>
+									Cancelar
+								</Button>
+								<Button colorScheme="purple" onClick={() => handleSave('update')}>
+									Guardar
+								</Button>
+							</ModalFooter>
+						</ModalContent>
+					</Modal>
 				</Container>
 			</main>
 		</>
@@ -97,6 +190,7 @@ export default function Home({ data = [] }: { data: any }) {
 }
 
 export async function getServerSideProps(ctx) {
+	// json-server --watch .\db\data.json -p 3001
 	const res = await fetch('http://localhost:3001/todos');
 	const data = await res.json();
 
