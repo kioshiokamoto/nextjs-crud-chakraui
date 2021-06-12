@@ -2,8 +2,8 @@
   "todos": [
     {
       "id": "2",
-      "todo": "Do the homework??",
-      "completed": true
+      "todo": "Do the homework??1",
+      "completed": false
     },
     {
       "id": "3",
@@ -14,11 +14,6 @@
       "id": "4",
       "todo": "Test OpenLayers",
       "completed": true
-    },
-    {
-      "todo": "Prueba",
-      "id": "PT8-YhS6j-yZddi8dw4Uk",
-      "completed": false
     }
   ]
 }
