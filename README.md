@@ -12,7 +12,7 @@ Aplicacion sencilla desarrollada en nextjs y crakraui
 
 ## Screenshots
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![App Screenshot](https://github.com/kioshiokamoto/nextjs-crud-chakraui/blob/main/preview/screen.PNG?raw=true)
 
 ## Ejecutar localmente
 
